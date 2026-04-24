@@ -20,12 +20,6 @@ config :astro_burner, AstroBurnerWeb.Endpoint,
   secret_key_base: "3RHepAV/I7lqMh789Bc4QA9z5tGwMD8epgUl4dOFntm9GhAkqL6zx4pVN7ZRrZFL",
   server: false
 
-# In test we don't send emails
-config :astro_burner, AstroBurner.Mailer, adapter: Swoosh.Adapters.Test
-
-# Disable swoosh api client as it is only required for production adapters
-config :swoosh, :api_client, false
-
 # Print only warnings and errors during test
 config :logger, level: :warning
 

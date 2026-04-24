@@ -1,8 +1,8 @@
 defmodule AstroBurnerWeb.PageControllerTest do
-  use AstroBurnerWeb.ConnCase
+  use AstroBurnerWeb.ConnCase, async: true
 
-  test "GET /", %{conn: conn} do
+  test "GET / redirects to LiveView", %{conn: conn} do
     conn = get(conn, ~p"/")
-    assert html_response(conn, 200) =~ "Peace of mind from prototype to production"
+    assert html_response(conn, 200) =~ "Spacecraft Mass"
   end
 end

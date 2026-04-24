@@ -31,4 +31,20 @@ defmodule AstroBurner.Planets do
   @doc "Returns all planets ordered alphabetically by name."
   @spec list_planets() :: [Planet.t()]
   def list_planets, do: Repo.all(from p in Planet, order_by: p.name)
+
+  @doc "Fetches multiple planets by UUID string IDs in a single query. Returns a map of id => planet."
+  @spec get_planets_by_ids([Ecto.UUID.t()]) :: %{Ecto.UUID.t() => Planet.t()}
+  def get_planets_by_ids(ids) when is_list(ids) do
+    uuids =
+      Enum.flat_map(ids, fn id ->
+        case Ecto.UUID.cast(id) do
+          {:ok, uuid} -> [uuid]
+          :error -> []
+        end
+      end)
+
+    uuids
+    |> then(&Repo.all(from p in Planet, where: p.id in ^&1))
+    |> Map.new(&{&1.id, &1})
+  end
 end

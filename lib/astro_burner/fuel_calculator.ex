@@ -1,7 +1,7 @@
 defmodule AstroBurner.FuelCalculator do
   @moduledoc "Calculates spacecraft fuel requirements for launch and landing maneuvers."
 
-  alias AstroBurner.Planets
+  alias AstroBurner.Planets.Planet
 
   @valid_maneuvers [:launch, :landing]
 
@@ -21,26 +21,20 @@ defmodule AstroBurner.FuelCalculator do
     launch:  mass * gravity * 0.042 - 33
     landing: mass * gravity * 0.033 - 42
   """
-  @spec calculate(pos_integer(), Ecto.UUID.t(), maneuver()) ::
+  @spec calculate(pos_integer(), Planet.t(), maneuver()) ::
           {:ok, non_neg_integer()} | {:error, String.t()}
-  def calculate(mass, planet_id, maneuver)
-      when is_integer(mass) and mass > 0 and is_binary(planet_id) and
-             maneuver in @valid_maneuvers do
-    with {:ok, planet} <- Planets.get_planet(planet_id) do
-      total_fuel(mass, planet.gravity, maneuver, 0, nil)
-    end
+  def calculate(mass, %Planet{} = planet, maneuver)
+      when is_integer(mass) and mass > 0 and maneuver in @valid_maneuvers do
+    total_fuel(mass, planet.gravity, maneuver, 0, nil)
   end
 
-  def calculate(mass, _planet_id, _maneuver) when not is_integer(mass),
+  def calculate(mass, _planet, _maneuver) when not is_integer(mass),
     do: {:error, "mass must be an integer"}
 
-  def calculate(mass, _planet_id, _maneuver) when is_integer(mass) and mass <= 0,
+  def calculate(mass, _planet, _maneuver) when is_integer(mass) and mass <= 0,
     do: {:error, "mass must be greater than zero"}
 
-  def calculate(_mass, planet_id, _maneuver) when not is_binary(planet_id),
-    do: {:error, "planet_id must be a string"}
-
-  def calculate(_mass, _planet_id, maneuver) when maneuver not in @valid_maneuvers,
+  def calculate(_mass, _planet, maneuver) when maneuver not in @valid_maneuvers,
     do: {:error, "maneuver must be :launch or :landing"}
 
   # gravity is %Decimal{} from the DB; mass is always an integer (initial input
