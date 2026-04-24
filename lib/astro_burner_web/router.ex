@@ -17,7 +17,7 @@ defmodule AstroBurnerWeb.Router do
   scope "/", AstroBurnerWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live "/", FlightPathLive
   end
 
   # Other scopes may use custom stacks.
@@ -38,7 +38,6 @@ defmodule AstroBurnerWeb.Router do
       pipe_through :browser
 
       live_dashboard "/dashboard", metrics: AstroBurnerWeb.Telemetry
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
   end
 end
