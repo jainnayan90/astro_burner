@@ -2,8 +2,15 @@ This is a web application written using the Phoenix web framework.
 
 ## Project guidelines
 
-- Use `mix precommit` alias when you are done with all changes and fix any pending issues
 - Use the already included and available `:req` (`Req`) library for HTTP requests, **avoid** `:httpoison`, `:tesla`, and `:httpc`. Req is included by default and is the preferred HTTP client for Phoenix apps
+
+## Development Workflow
+
+All contributions **MUST** pass the following gates before a PR is opened:
+
+1. `mix precommit` — runs `compile --warnings-as-errors`, `deps.unlock --unused`, `format`, and the full test suite in one step
+2. `mix credo --strict` — zero warnings required (separate from precommit for explicit visibility)
+3. Manual verification of the changed LiveView(s) in a local browser session at mobile, tablet, and desktop breakpoints
 
 ### Phoenix v1.8 guidelines
 
@@ -91,7 +98,48 @@ custom classes must fully style the input
 - To debug test failures, run tests in a specific file with `mix test test/my_test.exs` or run all previously failed tests with `mix test --failed`
 - `mix deps.clean --all` is **almost never needed**. **Avoid** using it unless you have good reason
 
+## Code Quality & Conventions
+
+A consistent, readable codebase is a shared asset — individual style preferences are subordinated to team standards.
+
+### Formatting & tooling
+
+- **Naming**: functions and variables **MUST** use `snake_case`; modules **MUST** use `CamelCase`
+- `mix format` **MUST** be run and **MUST** produce no diff before every commit. CI **MUST** enforce this check
+- Credo **MUST** report zero warnings at the `.credo.exs` strict level. New warnings **MUST** be resolved before a PR is merged; inline `# credo:disable` suppressions **MUST** include a justification comment
+- Dead code, commented-out blocks, and unused aliases **MUST** be removed before merging
+- Module documentation (`@moduledoc`) **MUST** be present for all context and component modules. Functions with non-trivial logic **MUST** have `@doc` annotations
+
+### Idiomatic Elixir
+
+- **Always** use the pipe operator `|>` to express data transformation chains — never nest function calls more than two levels deep
+- **Always** pattern-match in function heads instead of using `if`/`case` inside the body when the branching is on the shape of the input
+- Use `with` for sequential operations that can fail — **never** nest `case` blocks to handle `{:ok, _}` / `{:error, _}` chains
+- **Prefer** pure functions and explicit data flow. Avoid process-level side-effects unless OTP primitives are the right tool
+- **Never** use `else` branches in `with` for the happy path; handle errors explicitly in the `else` block only
+- Use `@spec` type annotations on all public context and utility functions
+- **Always** use `!`-suffix variants (`Repo.get!`, `Repo.one!`) only when an absent record is a programmer error, not a user error
+
+### Idiomatic Phoenix
+
+- Keep LiveView `handle_event/3` callbacks thin — extract business logic into context functions, not LiveView modules
+- **Never** build raw query strings or HTML in controllers or LiveViews; use context functions and HEEx templates respectively
+- Assign only what the template needs to `socket.assigns` — avoid putting large structs or entire record lists in assigns when a stream or a subset suffices
+- Use `Phoenix.Component` function components for reusable UI fragments; **avoid** duplicating template markup across LiveViews
+
 ## Test guidelines
+
+### Test-Driven Development
+
+TDD is **NON-NEGOTIABLE** for all new features and bug fixes.
+
+- Tests **MUST** be written and confirmed to **FAIL** before implementation begins
+- **Red → Green → Refactor** cycle **MUST** be followed strictly
+- Context functions **MUST** have unit tests covering both success and error paths
+- LiveView interactions **MUST** be covered by `Phoenix.LiveViewTest` integration tests
+- Tests **MUST** run without external service dependencies — use mocks/stubs for third-party APIs only; use the real database for context/repo tests
+
+### Process and timing
 
 - **Always use `start_supervised!/1`** to start processes in tests as it guarantees cleanup between tests
 - **Avoid** `Process.sleep/1` and `Process.alive?/1` in tests
@@ -121,6 +169,17 @@ custom classes must fully style the input
 - `Phoenix.View` no longer is needed or included with Phoenix, don't use it
 <!-- phoenix:phoenix-end -->
 
+<!-- phoenix:context-start -->
+## Context and Architecture guidelines
+
+- No LiveView, controller, or plug **MUST** make direct Ecto/database calls. **Always** delegate all data operations to domain Context modules
+- Context functions **MUST** return `{:ok, struct}` or `{:error, changeset}` — never return raw structs or raise on failure in public context functions
+- Contexts **MUST** be organized by business domain (e.g., `Accounts`, `Appointments`, `Billing`). Group all schemas, queries, and business logic for a domain within its context module
+- Inter-context calls are permitted **only** through public context functions; **never** query across context boundaries using raw schema references from another context
+- Use `Phoenix.PubSub` for broadcasting live updates across LiveView processes when state changes need to propagate to multiple subscribers
+- All outbound HTTP calls to external APIs **MUST** use the `Req` library (`~> 0.5`). HTTPoison, Hackney, Mint, and any other HTTP clients are **PROHIBITED** for application code
+<!-- phoenix:context-end -->
+
 <!-- phoenix:ecto-start -->
 ## Ecto Guidelines
 
@@ -131,6 +190,9 @@ custom classes must fully style the input
 - You **must** use `Ecto.Changeset.get_field(changeset, :field)` to access changeset fields
 - Fields which are set programatically, such as `user_id`, must not be listed in `cast` calls or similar for security purposes. Instead they must be explicitly set when creating the struct
 - **Always** invoke `mix ecto.gen.migration migration_name_using_underscores` when generating migration files, so the correct timestamp and conventions are applied
+- Every table **MUST** use a UUID primary key — **never** use the default auto-increment integer:
+  - Migration: `create table(:name, primary_key: false)` with `add :id, :binary_id, primary_key: true`
+  - Schema: declare `@primary_key {:id, :binary_id, autogenerate: true}` and `@foreign_key_type :binary_id` before the `schema` block
 <!-- phoenix:ecto-end -->
 
 <!-- phoenix:html-start -->

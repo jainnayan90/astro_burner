@@ -1,11 +1,9 @@
-# Script for populating the database. You can run it as:
-#
-#     mix run priv/repo/seeds.exs
-#
-# Inside the script, you can read and write to any of your
-# repositories directly:
-#
-#     AstroBurner.Repo.insert!(%AstroBurner.SomeSchema{})
-#
-# We recommend using the bang functions (`insert!`, `update!`
-# and so on) as they will fail if something goes wrong.
+alias AstroBurner.Planets
+
+planets = [
+  %{name: "earth", gravity: Decimal.new("9.807")},
+  %{name: "moon", gravity: Decimal.new("1.62")},
+  %{name: "mars", gravity: Decimal.new("3.711")}
+]
+
+Enum.each(planets, &Planets.upsert_planet!/1)
