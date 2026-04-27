@@ -10,7 +10,6 @@ defmodule AstroBurner.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      compilers: [:phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader]
     ]
   end
@@ -49,7 +48,7 @@ defmodule AstroBurner.MixProject do
       {:phoenix_live_view, "~> 1.1"},
       {:lazy_html, ">= 0.1.0", only: :test},
       {:ex_machina, "~> 2.8", only: :test},
-      {:phoenix_live_dashboard, "~> 0.8.3", only: :dev},
+      {:phoenix_live_dashboard, "~> 0.8.3", only: [:dev, :test]},
       {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.3", runtime: Mix.env() == :dev},
       {:heroicons,
